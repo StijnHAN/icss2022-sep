@@ -5,8 +5,8 @@ import nl.han.ica.icss.checker.Checker;
 import nl.han.ica.icss.checker.SemanticError;
 import nl.han.ica.icss.generator.Generator;
 import nl.han.ica.icss.parser.ASTListener;
-import nl.han.ica.icss.parser.ICSSLexer;
-import nl.han.ica.icss.parser.ICSSParser;
+import nl.han.ica.icss.antlr.ICSSLexer;
+import nl.han.ica.icss.antlr.ICSSParser;
 import nl.han.ica.icss.transforms.Evaluator;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.atn.ATNConfigSet;
@@ -34,15 +34,19 @@ public class Pipeline implements ANTLRErrorListener {
     public AST getAST() {
         return ast;
     }
+
     public List<String> getErrors() {
         return errors;
     }
+
     public boolean isParsed() {
         return parsed;
     }
+
     public boolean isChecked() {
         return checked;
     }
+
     public boolean isTransformed() {
         return transformed;
     }
@@ -83,30 +87,31 @@ public class Pipeline implements ANTLRErrorListener {
         parsed = errors.isEmpty();
         checked = transformed = false;
     }
+
     public boolean check() {
-            if(ast == null)
-                return false;
+        if (ast == null)
+            return false;
 
-           (new Checker()).check(this.ast);
+        (new Checker()).check(this.ast);
 
-            ArrayList<SemanticError> errors = this.ast.getErrors();
-            if (!errors.isEmpty()) {
-                for (SemanticError e : errors) {
-                    this.errors.add(e.toString());
-                }
+        ArrayList<SemanticError> errors = this.ast.getErrors();
+        if (!errors.isEmpty()) {
+            for (SemanticError e : errors) {
+                this.errors.add(e.toString());
             }
+        }
 
-            checked = errors.isEmpty();
-            transformed = false;
-            return errors.isEmpty();
+        checked = errors.isEmpty();
+        transformed = false;
+        return errors.isEmpty();
     }
 
-    public void clearErrors(){
+    public void clearErrors() {
         errors.clear();
     }
 
     public void transform() {
-        if(ast == null)
+        if (ast == null)
             return;
 
         (new Evaluator()).apply(ast);
@@ -114,6 +119,7 @@ public class Pipeline implements ANTLRErrorListener {
 
         transformed = errors.isEmpty();
     }
+
     public String generate() {
         Generator generator = new Generator();
         return generator.generate(ast);

@@ -1,5 +1,7 @@
 package nl.han.ica.icss.parser;
 
+import nl.han.ica.icss.antlr.ICSSLexer;
+import nl.han.ica.icss.antlr.ICSSParser;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
