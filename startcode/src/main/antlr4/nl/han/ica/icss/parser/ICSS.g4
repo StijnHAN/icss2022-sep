@@ -41,24 +41,37 @@ MIN: '-';
 MUL: '*';
 ASSIGNMENT_OPERATOR: ':=';
 
-
-
-
 //--- PARSER: ---
-stylesheet: rule* EOF;
+stylesheet: (styleRule | variableAssignment)* EOF;
 
-rule: selector OPEN_BRACE declaration+ CLOSE_BRACE;
+styleRule: selector OPEN_BRACE (declaration | variableAssignment | ifClause)+ CLOSE_BRACE;
 
-selector: ID_IDENT | CLASS_IDENT | LOWER_IDENT;
+selector: classSelector | idSelector | tagSelector;
+classSelector: CLASS_IDENT;
+idSelector: ID_IDENT;
+tagSelector: LOWER_IDENT;
 
-declaration: regularDeclaration | colorDeclaration | sizeDeclaration;
+declaration: propertyName COLON expression SEMICOLON;
 
-regularDeclaration: property COLON regularValue SEMICOLON;
-colorDeclaration: property COLON colorValue SEMICOLON;
-sizeDeclaration: property COLON sizeValue SEMICOLON;
+propertyName: 'color' | 'background-color' | 'width' | 'height' ;
 
-property: 'color' | 'background-color' | 'width' | 'height';
+expression: literal | operation | variableReference;
+//expressionType: ;
 
-regularValue: SCALAR | TRUE | FALSE;
-colorValue: COLOR;
-sizeValue: (PIXELSIZE | PERCENTAGE);
+literal: boolLiteral | colorLiteral | percentageLiteral | pixelLiteral | scalarLiteral;
+boolLiteral: TRUE | FALSE;
+colorLiteral: COLOR;
+percentageLiteral: PERCENTAGE;
+pixelLiteral: PIXELSIZE;
+scalarLiteral: SCALAR;
+
+variableAssignment: variableReference ASSIGNMENT_OPERATOR expression SEMICOLON;
+variableReference: CAPITAL_IDENT;
+
+ifClause: 'if' BOX_BRACKET_OPEN expression BOX_BRACKET_CLOSE OPEN_BRACE (declaration | variableAssignment)+ CLOSE_BRACE elseClause?;
+elseClause: 'else' OPEN_BRACE (declaration | variableAssignment)+ CLOSE_BRACE;
+
+operation: addOperation | multiplyOperation | subtractOperation;
+addOperation: literal (PLUS literal)+;
+multiplyOperation: literal (MUL literal)+;
+subtractOperation: literal (MIN literal)+;
