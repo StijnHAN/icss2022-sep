@@ -68,10 +68,10 @@ scalarLiteral: SCALAR;
 variableAssignment: variableReference ASSIGNMENT_OPERATOR expression SEMICOLON;
 variableReference: CAPITAL_IDENT;
 
-ifClause: 'if' BOX_BRACKET_OPEN expression BOX_BRACKET_CLOSE OPEN_BRACE (declaration | variableAssignment)+ CLOSE_BRACE elseClause?;
-elseClause: 'else' OPEN_BRACE (declaration | variableAssignment)+ CLOSE_BRACE;
+ifClause: IF BOX_BRACKET_OPEN expression BOX_BRACKET_CLOSE OPEN_BRACE (declaration | variableAssignment | ifClause)+ CLOSE_BRACE elseClause?;
+elseClause: ELSE OPEN_BRACE (declaration | variableAssignment | ifClause)+ CLOSE_BRACE;
 
 operation: addOperation | multiplyOperation | subtractOperation;
-addOperation: literal (PLUS literal)+;
-multiplyOperation: literal (MUL literal)+;
-subtractOperation: literal (MIN literal)+;
+addOperation: (literal | variableReference) PLUS (literal | variableReference | operation);
+multiplyOperation: (literal | variableReference) MUL (literal | variableReference | operation);
+subtractOperation: (literal | variableReference) MIN (literal | variableReference | operation);
