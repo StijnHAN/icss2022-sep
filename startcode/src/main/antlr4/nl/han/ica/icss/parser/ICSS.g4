@@ -71,7 +71,7 @@ variableReference: CAPITAL_IDENT;
 ifClause: IF BOX_BRACKET_OPEN expression BOX_BRACKET_CLOSE OPEN_BRACE (declaration | variableAssignment | ifClause)+ CLOSE_BRACE elseClause?;
 elseClause: ELSE OPEN_BRACE (declaration | variableAssignment | ifClause)+ CLOSE_BRACE;
 
-operation: addOperation | multiplyOperation | subtractOperation;
-multiplyOperation: (literal | variableReference) MUL (literal | variableReference | operation);
-addOperation: (literal | variableReference) PLUS (literal | variableReference | operation);
-subtractOperation: (literal | variableReference) MIN (literal | variableReference | operation);
+operation: addOperation | subtractOperation | multiplyOperation;
+multiplyOperation: (literal | variableReference) MUL (literal | variableReference);
+addOperation: (literal | variableReference | multiplyOperation) PLUS (literal | variableReference | operation);
+subtractOperation: (literal | variableReference | multiplyOperation) MIN (literal | variableReference | operation);
