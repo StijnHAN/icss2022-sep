@@ -56,7 +56,6 @@ declaration: propertyName COLON expression SEMICOLON;
 propertyName: 'color' | 'background-color' | 'width' | 'height' ;
 
 expression: literal | operation | variableReference;
-//expressionType: ;
 
 literal: boolLiteral | colorLiteral | percentageLiteral | pixelLiteral | scalarLiteral;
 boolLiteral: TRUE | FALSE;
@@ -72,6 +71,6 @@ ifClause: IF BOX_BRACKET_OPEN expression BOX_BRACKET_CLOSE OPEN_BRACE (declarati
 elseClause: ELSE OPEN_BRACE (declaration | variableAssignment | ifClause)+ CLOSE_BRACE;
 
 operation: addOperation | subtractOperation | multiplyOperation;
-multiplyOperation: (literal | variableReference) MUL (literal | variableReference);
-addOperation: (literal | variableReference | multiplyOperation) PLUS (literal | variableReference | operation);
-subtractOperation: (literal | variableReference | multiplyOperation) MIN (literal | variableReference | operation);
+multiplyOperation: (literal | variableReference) MUL expression;
+addOperation: (literal | variableReference | multiplyOperation) PLUS expression;
+subtractOperation: (literal | variableReference | multiplyOperation) MIN expression;
