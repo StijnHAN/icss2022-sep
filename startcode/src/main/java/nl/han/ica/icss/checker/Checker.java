@@ -40,8 +40,12 @@ public class Checker {
 
     private void checkStyleRule(Stylerule styleRule) {
         for (ASTNode astNode : styleRule.getChildren()) {
-            if (astNode instanceof Selector) {
-                checkSelector((Selector) astNode);
+            if (astNode instanceof ClassSelector) {
+                checkClassSelector((ClassSelector) astNode);
+            } else if (astNode instanceof IdSelector) {
+                checkIdSelector((IdSelector) astNode);
+            } else if (astNode instanceof TagSelector) {
+                checkTagSelector((TagSelector) astNode);
             } else if (astNode instanceof Declaration) {
                 checkDeclaration((Declaration) astNode);
             } else if (astNode instanceof VariableAssignment) {
@@ -53,15 +57,7 @@ public class Checker {
     }
 
     private void checkSelector(Selector selector) {
-        for (ASTNode astNode : selector.getChildren()) {
-            if (astNode instanceof ClassSelector) {
-                checkClassSelector((ClassSelector) astNode);
-            } else if (astNode instanceof IdSelector) {
-                checkIdSelector((IdSelector) astNode);
-            } else if (astNode instanceof TagSelector) {
-                checkTagSelector((TagSelector) astNode);
-            }
-        }
+        //TODO
     }
 
     private void checkClassSelector(ClassSelector astNode) {
@@ -80,22 +76,22 @@ public class Checker {
         for (ASTNode astNode : declaration.getChildren()) {
             if (astNode instanceof PropertyName) {
                 checkPropertyName((PropertyName) astNode);
-            } else if (astNode instanceof Expression) {
-                checkExpression((Expression) astNode);
+            } else if (astNode instanceof Literal) {
+                checkLiteral((Literal) astNode);
+            } else if (astNode instanceof AddOperation) {
+                checkAddOperation((AddOperation) astNode);
+            } else if (astNode instanceof SubtractOperation) {
+                checkSubtractOperation((SubtractOperation) astNode);
+            } else if (astNode instanceof MultiplyOperation) {
+                checkMultiplyOperation((MultiplyOperation) astNode);
+            } else if (astNode instanceof VariableReference) {
+                checkVariableReference((VariableReference) astNode);
             }
         }
     }
 
     private void checkExpression(Expression expression) {
-        for (ASTNode astNode : expression.getChildren()) {
-            if (astNode instanceof Literal) {
-                checkLiteral((Literal) astNode);
-            } else if (astNode instanceof Operation) {
-                checkOperation((Operation) astNode);
-            } else if (astNode instanceof VariableReference) {
-                checkVariableReference((VariableReference) astNode);
-            }
-        }
+        //TODO
     }
 
     private void checkLiteral(Literal literal) {
@@ -107,7 +103,6 @@ public class Checker {
     }
 
     private void checkVariableAssignment(VariableAssignment variableAssignment) {
-        //TODO CH01
         declaredVariables.put(variableAssignment.name.name, assignType(variableAssignment.expression));
     }
 
@@ -128,24 +123,14 @@ public class Checker {
     }
 
     private void checkVariableReference(VariableReference variableReference) {
-        //TODO CH01 & CH06
-        System.out.println(variableReference.name);
-        System.out.println("-------------------------");
+        //TODO CH06
         if (!declaredVariables.containsKey(variableReference.name)) {
-            System.out.println(declaredVariables);
-            System.out.println(variableReference.name);
             variableReference.setError("Variabelen moeten gedefinieerd worden: " + variableReference.name);
         }
     }
 
     private void checkOperation(Operation operation) {
-        if (operation instanceof AddOperation) {
-            checkAddOperation((AddOperation) operation);
-        } else if (operation instanceof SubtractOperation) {
-            checkSubtractOperation((SubtractOperation) operation);
-        } else if (operation instanceof MultiplyOperation) {
-            checkMultiplyOperation((MultiplyOperation) operation);
-        }
+        //TODO
     }
 
     private void checkAddOperation(AddOperation addOperation) {
@@ -157,8 +142,10 @@ public class Checker {
                 checkVariableReference((VariableReference) astNode);
             } else if (astNode instanceof MultiplyOperation) {
                 checkMultiplyOperation((MultiplyOperation) astNode);
-            } else if (astNode instanceof Expression) {
-                checkExpression((Expression) astNode);
+            } else if (astNode instanceof AddOperation) {
+                checkAddOperation((AddOperation) astNode);
+            } else if (astNode instanceof SubtractOperation) {
+                checkSubtractOperation((SubtractOperation) astNode);
             }
         }
     }
@@ -172,8 +159,10 @@ public class Checker {
                 checkVariableReference((VariableReference) astNode);
             } else if (astNode instanceof MultiplyOperation) {
                 checkMultiplyOperation((MultiplyOperation) astNode);
-            } else if (astNode instanceof Expression) {
-                checkExpression((Expression) astNode);
+            } else if (astNode instanceof AddOperation) {
+                checkAddOperation((AddOperation) astNode);
+            } else if (astNode instanceof SubtractOperation) {
+                checkSubtractOperation((SubtractOperation) astNode);
             }
         }
     }
@@ -185,8 +174,12 @@ public class Checker {
                 checkLiteral((Literal) astNode);
             } else if (astNode instanceof VariableReference) {
                 checkVariableReference((VariableReference) astNode);
-            } else if (astNode instanceof Expression) {
-                checkExpression((Expression) astNode);
+            } else if (astNode instanceof AddOperation) {
+                checkAddOperation((AddOperation) astNode);
+            } else if (astNode instanceof SubtractOperation) {
+                checkSubtractOperation((SubtractOperation) astNode);
+            } else if (astNode instanceof MultiplyOperation) {
+                checkMultiplyOperation((MultiplyOperation) astNode);
             }
         }
     }
@@ -194,8 +187,16 @@ public class Checker {
     private void checkIfClause(IfClause ifClause) {
         //TODO CH05
         for (ASTNode astNode : ifClause.getChildren()) {
-            if (astNode instanceof Expression) {
-                checkExpression((Expression) astNode);
+            if (astNode instanceof Literal) {
+                checkLiteral((Literal) astNode);
+            } else if (astNode instanceof AddOperation) {
+                checkAddOperation((AddOperation) astNode);
+            } else if (astNode instanceof SubtractOperation) {
+                checkSubtractOperation((SubtractOperation) astNode);
+            } else if (astNode instanceof MultiplyOperation) {
+                checkMultiplyOperation((MultiplyOperation) astNode);
+            } else if (astNode instanceof VariableReference) {
+                checkVariableReference((VariableReference) astNode);
             } else if (astNode instanceof Declaration) {
                 checkDeclaration((Declaration) astNode);
             } else if (astNode instanceof VariableAssignment) {
