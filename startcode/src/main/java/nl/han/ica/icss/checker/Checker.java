@@ -14,6 +14,8 @@ import nl.han.ica.icss.ast.types.ExpressionType;
 
 import java.util.HashMap;
 
+import static org.apache.commons.lang3.StringUtils.capitalize;
+
 public class Checker {
 
     private IHANLinkedList<HashMap<String, ExpressionType>> variableTypes;
@@ -25,7 +27,20 @@ public class Checker {
 
         Stylesheet stylesheet = ast.root;
 
+        setVariableTypes();
         checkStylesheet(stylesheet);
+    }
+
+    private void setVariableTypes() {
+        HashMap<String, ExpressionType> temp;
+
+        for (int i = 0; i < ExpressionType.values().length; i++) {
+            ExpressionType value = ExpressionType.values()[i];
+
+            temp = new HashMap<>();
+            temp.put(capitalize(value.name().toLowerCase()) + "Literal", value);
+            variableTypes.addFirst(temp);
+        }
     }
 
     private void checkStylesheet(Stylesheet stylesheet) {
@@ -135,6 +150,14 @@ public class Checker {
 
     private void checkAddOperation(AddOperation addOperation) {
         //TODO CH02 & CH03
+
+        Expression lhs = addOperation.lhs;
+        Expression rhs = addOperation.rhs;
+
+        if (!compareSides(lhs, rhs)) {
+            addOperation.setError("Min en Plus operanden moeten hetzelfde type hebben");
+        }
+
         for (ASTNode astNode : addOperation.getChildren()) {
             if (astNode instanceof Literal) {
                 checkLiteral((Literal) astNode);
@@ -150,8 +173,91 @@ public class Checker {
         }
     }
 
+    private boolean compareSides(Expression lhs, Expression rhs) {
+        ExpressionType lhsType = null;
+        ExpressionType rhsType = null;
+
+        if (lhs instanceof VariableReference) {
+            lhsType = declaredVariables.get(((VariableReference) lhs).name);
+        } else if (lhs instanceof MultiplyOperation) {
+            lhsType = getOperationType((Operation) lhs);
+        } else {
+            for (int i = 0; i < variableTypes.getSize(); i++) {
+                if (variableTypes.get(i).containsKey(lhs.getClass().getSimpleName())) {
+                    lhsType = variableTypes.get(i).get(lhs.getClass().getSimpleName());
+                    break;
+                }
+            }
+        }
+
+        if (rhs instanceof VariableReference) {
+            rhsType = declaredVariables.get(((VariableReference) rhs).name);
+        } else if (rhs instanceof Operation) {
+            rhsType = getOperationType((Operation) rhs);
+        } else {
+            for (int i = 0; i < variableTypes.getSize(); i++) {
+                if (variableTypes.get(i).containsKey(rhs.getClass().getSimpleName())) {
+                    rhsType = variableTypes.get(i).get(rhs.getClass().getSimpleName());
+                    break;
+                }
+            }
+        }
+
+        return lhsType.equals(rhsType) || lhsType == ExpressionType.SCALAR || rhsType == ExpressionType.SCALAR;
+    }
+
+    private ExpressionType getOperationType(Operation operation) {
+        Expression lhs = operation.lhs;
+        Expression rhs = operation.rhs;
+
+        ExpressionType lhsType;
+        ExpressionType rhsType;
+
+        if (lhs instanceof VariableReference) {
+            return declaredVariables.get(((VariableReference) lhs).name);
+        } else if (lhs instanceof MultiplyOperation) {
+            return getOperationType((Operation) lhs);
+        } else {
+            for (int i = 0; i < variableTypes.getSize(); i++) {
+                if (variableTypes.get(i).containsKey(lhs.getClass().getSimpleName())) {
+                    lhsType = variableTypes.get(i).get(lhs.getClass().getSimpleName());
+                    if (lhsType == ExpressionType.SCALAR) {
+                        break;
+                    }
+                    return lhsType;
+                }
+            }
+        }
+
+        if (rhs instanceof VariableReference) {
+            return declaredVariables.get(((VariableReference) rhs).name);
+        } else if (rhs instanceof Operation) {
+            return getOperationType((Operation) rhs);
+        } else {
+            for (int i = 0; i < variableTypes.getSize(); i++) {
+                if (variableTypes.get(i).containsKey(rhs.getClass().getSimpleName())) {
+                    rhsType = variableTypes.get(i).get(rhs.getClass().getSimpleName());
+                    if (rhsType == ExpressionType.SCALAR) {
+                        break;
+                    }
+                    return rhsType;
+                }
+            }
+        }
+
+        return ExpressionType.SCALAR;
+    }
+
     private void checkSubtractOperation(SubtractOperation subtractOperation) {
         //TODO CH02 & CH03
+
+        Expression lhs = subtractOperation.lhs;
+        Expression rhs = subtractOperation.rhs;
+
+        if (!compareSides(lhs, rhs)) {
+            subtractOperation.setError("Min en Plus operanden moeten hetzelfde type hebben");
+        }
+
         for (ASTNode astNode : subtractOperation.getChildren()) {
             if (astNode instanceof Literal) {
                 checkLiteral((Literal) astNode);
@@ -169,6 +275,14 @@ public class Checker {
 
     private void checkMultiplyOperation(MultiplyOperation multiplyOperation) {
         //TODO CH02 & CH03
+
+        Expression lhs = multiplyOperation.lhs;
+        Expression rhs = multiplyOperation.rhs;
+
+        if (!compareSides(lhs, rhs)) {
+            multiplyOperation.setError("Min en Plus operanden moeten hetzelfde type hebben");
+        }
+
         for (ASTNode astNode : multiplyOperation.getChildren()) {
             if (astNode instanceof Literal) {
                 checkLiteral((Literal) astNode);
