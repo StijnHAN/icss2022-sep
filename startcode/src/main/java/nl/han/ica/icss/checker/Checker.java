@@ -12,7 +12,9 @@ import nl.han.ica.icss.ast.selectors.IdSelector;
 import nl.han.ica.icss.ast.selectors.TagSelector;
 import nl.han.ica.icss.ast.types.ExpressionType;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import static org.apache.commons.lang3.StringUtils.capitalize;
 
@@ -151,10 +153,14 @@ public class Checker {
     private void checkAddOperation(AddOperation addOperation) {
         //TODO CH02 & CH03
 
-        Expression lhs = addOperation.lhs;
-        Expression rhs = addOperation.rhs;
+        List<ExpressionType> expressionTypeList = getOperationTypes(addOperation);
 
-        if (!compareSides(lhs, rhs)) {
+        ExpressionType lhs = expressionTypeList.get(0);
+        ExpressionType rhs = expressionTypeList.get(1);
+
+        if (((lhs != rhs)
+                && (lhs != ExpressionType.SCALAR)
+                && (rhs != ExpressionType.SCALAR))) {
             addOperation.setError("Min en Plus operanden moeten hetzelfde type hebben");
         }
 
@@ -173,40 +179,9 @@ public class Checker {
         }
     }
 
-    private boolean compareSides(Expression lhs, Expression rhs) {
-        ExpressionType lhsType = null;
-        ExpressionType rhsType = null;
+    private List<ExpressionType> getOperationTypes(Operation operation) {
+        List<ExpressionType> operationTypes = new ArrayList<>();
 
-        if (lhs instanceof VariableReference) {
-            lhsType = declaredVariables.get(((VariableReference) lhs).name);
-        } else if (lhs instanceof MultiplyOperation) {
-            lhsType = getOperationType((Operation) lhs);
-        } else {
-            for (int i = 0; i < variableTypes.getSize(); i++) {
-                if (variableTypes.get(i).containsKey(lhs.getClass().getSimpleName())) {
-                    lhsType = variableTypes.get(i).get(lhs.getClass().getSimpleName());
-                    break;
-                }
-            }
-        }
-
-        if (rhs instanceof VariableReference) {
-            rhsType = declaredVariables.get(((VariableReference) rhs).name);
-        } else if (rhs instanceof Operation) {
-            rhsType = getOperationType((Operation) rhs);
-        } else {
-            for (int i = 0; i < variableTypes.getSize(); i++) {
-                if (variableTypes.get(i).containsKey(rhs.getClass().getSimpleName())) {
-                    rhsType = variableTypes.get(i).get(rhs.getClass().getSimpleName());
-                    break;
-                }
-            }
-        }
-
-        return lhsType.equals(rhsType) || lhsType == ExpressionType.SCALAR || rhsType == ExpressionType.SCALAR;
-    }
-
-    private ExpressionType getOperationType(Operation operation) {
         Expression lhs = operation.lhs;
         Expression rhs = operation.rhs;
 
@@ -214,47 +189,60 @@ public class Checker {
         ExpressionType rhsType;
 
         if (lhs instanceof VariableReference) {
-            return declaredVariables.get(((VariableReference) lhs).name);
+            operationTypes.add(declaredVariables.get(((VariableReference) lhs).name));
         } else if (lhs instanceof MultiplyOperation) {
-            return getOperationType((Operation) lhs);
+            operationTypes.add(prioritizeTypes(getOperationTypes((Operation) lhs)));
         } else {
             for (int i = 0; i < variableTypes.getSize(); i++) {
                 if (variableTypes.get(i).containsKey(lhs.getClass().getSimpleName())) {
                     lhsType = variableTypes.get(i).get(lhs.getClass().getSimpleName());
-                    if (lhsType == ExpressionType.SCALAR) {
-                        break;
-                    }
-                    return lhsType;
+                    operationTypes.add(lhsType);
                 }
             }
         }
 
         if (rhs instanceof VariableReference) {
-            return declaredVariables.get(((VariableReference) rhs).name);
+            operationTypes.add(declaredVariables.get(((VariableReference) rhs).name));
         } else if (rhs instanceof Operation) {
-            return getOperationType((Operation) rhs);
+            operationTypes.add(prioritizeTypes(getOperationTypes((Operation) rhs)));
         } else {
             for (int i = 0; i < variableTypes.getSize(); i++) {
                 if (variableTypes.get(i).containsKey(rhs.getClass().getSimpleName())) {
                     rhsType = variableTypes.get(i).get(rhs.getClass().getSimpleName());
-                    if (rhsType == ExpressionType.SCALAR) {
-                        break;
-                    }
-                    return rhsType;
+                    operationTypes.add(rhsType);
                 }
             }
         }
 
-        return ExpressionType.SCALAR;
+        return operationTypes;
+    }
+
+    private ExpressionType prioritizeTypes(List<ExpressionType> expressionType) {
+        ExpressionType lhsType = expressionType.get(0);
+        ExpressionType rhsType = expressionType.get(1);
+
+        if (lhsType == rhsType) {
+            return lhsType;
+        } else if (lhsType == ExpressionType.SCALAR) {
+            return rhsType;
+        } else if (rhsType == ExpressionType.SCALAR) {
+            return lhsType;
+        }
+
+        return ExpressionType.UNDEFINED;
     }
 
     private void checkSubtractOperation(SubtractOperation subtractOperation) {
         //TODO CH02 & CH03
 
-        Expression lhs = subtractOperation.lhs;
-        Expression rhs = subtractOperation.rhs;
+        List<ExpressionType> expressionTypeList = getOperationTypes(subtractOperation);
 
-        if (!compareSides(lhs, rhs)) {
+        ExpressionType lhs = expressionTypeList.get(0);
+        ExpressionType rhs = expressionTypeList.get(1);
+
+        if (((lhs == rhs)
+                && (lhs != ExpressionType.SCALAR)
+                && (rhs != ExpressionType.SCALAR))) {
             subtractOperation.setError("Min en Plus operanden moeten hetzelfde type hebben");
         }
 
@@ -276,11 +264,14 @@ public class Checker {
     private void checkMultiplyOperation(MultiplyOperation multiplyOperation) {
         //TODO CH02 & CH03
 
-        Expression lhs = multiplyOperation.lhs;
-        Expression rhs = multiplyOperation.rhs;
+        List<ExpressionType> expressionTypeList = getOperationTypes(multiplyOperation);
 
-        if (!compareSides(lhs, rhs)) {
-            multiplyOperation.setError("Min en Plus operanden moeten hetzelfde type hebben");
+        ExpressionType lhs = expressionTypeList.get(0);
+        ExpressionType rhs = expressionTypeList.get(1);
+
+        if ((lhs == ExpressionType.SCALAR && rhs == ExpressionType.SCALAR)
+                || (lhs != ExpressionType.SCALAR && rhs != ExpressionType.SCALAR)) {
+            multiplyOperation.setError("Één van de operanden bij vermenigvuldigen moet scalar zijn");
         }
 
         for (ASTNode astNode : multiplyOperation.getChildren()) {
