@@ -151,7 +151,6 @@ public class Checker {
     }
 
     private void checkAddOperation(AddOperation addOperation) {
-        //TODO CH02 & CH03
 
         List<ExpressionType> expressionTypeList = getOperationTypes(addOperation);
 
@@ -162,6 +161,10 @@ public class Checker {
                 && (lhs != ExpressionType.SCALAR)
                 && (rhs != ExpressionType.SCALAR))) {
             addOperation.setError("Min en Plus operanden moeten hetzelfde type hebben");
+        }
+
+        if (checkForColors(lhs, rhs)) {
+            addOperation.setError("Kleuren mogen niet gebruikt worden in operaties");
         }
 
         for (ASTNode astNode : addOperation.getChildren()) {
@@ -179,6 +182,10 @@ public class Checker {
         }
     }
 
+    private boolean checkForColors(ExpressionType lhs, ExpressionType rhs) {
+        return (lhs == ExpressionType.COLOR || rhs == ExpressionType.COLOR);
+    }
+
     private List<ExpressionType> getOperationTypes(Operation operation) {
         List<ExpressionType> operationTypes = new ArrayList<>();
 
@@ -190,7 +197,7 @@ public class Checker {
 
         if (lhs instanceof VariableReference) {
             operationTypes.add(declaredVariables.get(((VariableReference) lhs).name));
-        } else if (lhs instanceof MultiplyOperation) {
+        } else if (lhs instanceof Operation) {
             operationTypes.add(prioritizeTypes(getOperationTypes((Operation) lhs)));
         } else {
             for (int i = 0; i < variableTypes.getSize(); i++) {
@@ -233,7 +240,6 @@ public class Checker {
     }
 
     private void checkSubtractOperation(SubtractOperation subtractOperation) {
-        //TODO CH02 & CH03
 
         List<ExpressionType> expressionTypeList = getOperationTypes(subtractOperation);
 
@@ -244,6 +250,10 @@ public class Checker {
                 && (lhs != ExpressionType.SCALAR)
                 && (rhs != ExpressionType.SCALAR))) {
             subtractOperation.setError("Min en Plus operanden moeten hetzelfde type hebben");
+        }
+
+        if (checkForColors(lhs, rhs)) {
+            subtractOperation.setError("Kleuren mogen niet gebruikt worden in operaties");
         }
 
         for (ASTNode astNode : subtractOperation.getChildren()) {
@@ -262,7 +272,6 @@ public class Checker {
     }
 
     private void checkMultiplyOperation(MultiplyOperation multiplyOperation) {
-        //TODO CH02 & CH03
 
         List<ExpressionType> expressionTypeList = getOperationTypes(multiplyOperation);
 
@@ -272,6 +281,10 @@ public class Checker {
         if ((lhs == ExpressionType.SCALAR && rhs == ExpressionType.SCALAR)
                 || (lhs != ExpressionType.SCALAR && rhs != ExpressionType.SCALAR)) {
             multiplyOperation.setError("Één van de operanden bij vermenigvuldigen moet scalar zijn");
+        }
+
+        if (checkForColors(lhs, rhs)) {
+            multiplyOperation.setError("Kleuren mogen niet gebruikt worden in operaties");
         }
 
         for (ASTNode astNode : multiplyOperation.getChildren()) {
