@@ -90,6 +90,20 @@ public class Checker {
     }
 
     private void checkDeclaration(Declaration declaration) {
+
+        ExpressionType valueExpressionType = assignExpressionType(declaration.expression);
+        String propertyName = declaration.property.name;
+
+        if (propertyName.equals("color") || propertyName.equals("background-color")) {
+            if (valueExpressionType != ExpressionType.COLOR) {
+                declaration.setError("Value klopt niet met property");
+            }
+        } else if (propertyName.equals("width") || propertyName.equals("height")) {
+            if (valueExpressionType != ExpressionType.PIXEL && valueExpressionType != ExpressionType.PERCENTAGE) {
+                declaration.setError("Value klopt niet met property");
+            }
+        }
+
         for (ASTNode astNode : declaration.getChildren()) {
             if (astNode instanceof PropertyName) {
                 checkPropertyName((PropertyName) astNode);
@@ -120,23 +134,23 @@ public class Checker {
     }
 
     private void checkVariableAssignment(VariableAssignment variableAssignment) {
-        declaredVariables.put(variableAssignment.name.name, assignType(variableAssignment.expression));
+        declaredVariables.put(variableAssignment.name.name, assignExpressionType(variableAssignment.expression));
     }
 
-    private ExpressionType assignType(Expression expression) {
-        if (expression instanceof PixelLiteral) {
-            return ExpressionType.PIXEL;
-        } else if (expression instanceof PercentageLiteral) {
-            return ExpressionType.PERCENTAGE;
-        } else if (expression instanceof ColorLiteral) {
-            return ExpressionType.COLOR;
-        } else if (expression instanceof ScalarLiteral) {
-            return ExpressionType.SCALAR;
-        } else if (expression instanceof BoolLiteral) {
-            return ExpressionType.BOOL;
+    private ExpressionType assignExpressionType(Expression expression) {
+        if (expression instanceof VariableReference) {
+            return declaredVariables.get(((VariableReference) expression).name);
+        } else if (expression instanceof Operation) {
+            return prioritizeTypes(getOperationTypes((Operation) expression));
         } else {
-            return ExpressionType.UNDEFINED;
+            for (int i = 0; i < variableTypes.getSize(); i++) {
+                if (variableTypes.get(i).containsKey(expression.getClass().getSimpleName())) {
+                    return variableTypes.get(i).get(expression.getClass().getSimpleName());
+                }
+            }
         }
+
+        return ExpressionType.UNDEFINED;
     }
 
     private void checkVariableReference(VariableReference variableReference) {
@@ -148,6 +162,37 @@ public class Checker {
 
     private void checkOperation(Operation operation) {
         //TODO
+    }
+
+    private boolean checkForColors(ExpressionType lhs, ExpressionType rhs) {
+        return (lhs == ExpressionType.COLOR || rhs == ExpressionType.COLOR);
+    }
+
+    private List<ExpressionType> getOperationTypes(Operation operation) {
+        List<ExpressionType> operationTypes = new ArrayList<>();
+
+        Expression lhs = operation.lhs;
+        Expression rhs = operation.rhs;
+
+        operationTypes.add(assignExpressionType(lhs));
+        operationTypes.add(assignExpressionType(rhs));
+
+        return operationTypes;
+    }
+
+    private ExpressionType prioritizeTypes(List<ExpressionType> expressionType) {
+        ExpressionType lhsType = expressionType.get(0);
+        ExpressionType rhsType = expressionType.get(1);
+
+        if (lhsType == rhsType) {
+            return lhsType;
+        } else if (lhsType == ExpressionType.SCALAR) {
+            return rhsType;
+        } else if (rhsType == ExpressionType.SCALAR) {
+            return lhsType;
+        }
+
+        return ExpressionType.UNDEFINED;
     }
 
     private void checkAddOperation(AddOperation addOperation) {
@@ -180,63 +225,6 @@ public class Checker {
                 checkSubtractOperation((SubtractOperation) astNode);
             }
         }
-    }
-
-    private boolean checkForColors(ExpressionType lhs, ExpressionType rhs) {
-        return (lhs == ExpressionType.COLOR || rhs == ExpressionType.COLOR);
-    }
-
-    private List<ExpressionType> getOperationTypes(Operation operation) {
-        List<ExpressionType> operationTypes = new ArrayList<>();
-
-        Expression lhs = operation.lhs;
-        Expression rhs = operation.rhs;
-
-        ExpressionType lhsType;
-        ExpressionType rhsType;
-
-        if (lhs instanceof VariableReference) {
-            operationTypes.add(declaredVariables.get(((VariableReference) lhs).name));
-        } else if (lhs instanceof Operation) {
-            operationTypes.add(prioritizeTypes(getOperationTypes((Operation) lhs)));
-        } else {
-            for (int i = 0; i < variableTypes.getSize(); i++) {
-                if (variableTypes.get(i).containsKey(lhs.getClass().getSimpleName())) {
-                    lhsType = variableTypes.get(i).get(lhs.getClass().getSimpleName());
-                    operationTypes.add(lhsType);
-                }
-            }
-        }
-
-        if (rhs instanceof VariableReference) {
-            operationTypes.add(declaredVariables.get(((VariableReference) rhs).name));
-        } else if (rhs instanceof Operation) {
-            operationTypes.add(prioritizeTypes(getOperationTypes((Operation) rhs)));
-        } else {
-            for (int i = 0; i < variableTypes.getSize(); i++) {
-                if (variableTypes.get(i).containsKey(rhs.getClass().getSimpleName())) {
-                    rhsType = variableTypes.get(i).get(rhs.getClass().getSimpleName());
-                    operationTypes.add(rhsType);
-                }
-            }
-        }
-
-        return operationTypes;
-    }
-
-    private ExpressionType prioritizeTypes(List<ExpressionType> expressionType) {
-        ExpressionType lhsType = expressionType.get(0);
-        ExpressionType rhsType = expressionType.get(1);
-
-        if (lhsType == rhsType) {
-            return lhsType;
-        } else if (lhsType == ExpressionType.SCALAR) {
-            return rhsType;
-        } else if (rhsType == ExpressionType.SCALAR) {
-            return lhsType;
-        }
-
-        return ExpressionType.UNDEFINED;
     }
 
     private void checkSubtractOperation(SubtractOperation subtractOperation) {
