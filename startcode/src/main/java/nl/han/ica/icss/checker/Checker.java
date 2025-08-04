@@ -168,6 +168,10 @@ public class Checker {
         return (lhs == ExpressionType.COLOR || rhs == ExpressionType.COLOR);
     }
 
+    private boolean checkForBools(ExpressionType lhs, ExpressionType rhs) {
+        return (lhs == ExpressionType.BOOL || rhs == ExpressionType.BOOL);
+    }
+
     private List<ExpressionType> getOperationTypes(Operation operation) {
         List<ExpressionType> operationTypes = new ArrayList<>();
 
@@ -212,6 +216,10 @@ public class Checker {
             addOperation.setError("Kleuren mogen niet gebruikt worden in operaties");
         }
 
+        if (checkForBools(lhs, rhs)) {
+            addOperation.setError("Booleans mogen niet gebruikt worden in operaties");
+        }
+
         for (ASTNode astNode : addOperation.getChildren()) {
             if (astNode instanceof Literal) {
                 checkLiteral((Literal) astNode);
@@ -242,6 +250,10 @@ public class Checker {
 
         if (checkForColors(lhs, rhs)) {
             subtractOperation.setError("Kleuren mogen niet gebruikt worden in operaties");
+        }
+
+        if (checkForBools(lhs, rhs)) {
+            subtractOperation.setError("Booleans mogen niet gebruikt worden in operaties");
         }
 
         for (ASTNode astNode : subtractOperation.getChildren()) {
@@ -275,6 +287,10 @@ public class Checker {
             multiplyOperation.setError("Kleuren mogen niet gebruikt worden in operaties");
         }
 
+        if (checkForBools(lhs, rhs)) {
+            multiplyOperation.setError("Booleans mogen niet gebruikt worden in operaties");
+        }
+
         for (ASTNode astNode : multiplyOperation.getChildren()) {
             if (astNode instanceof Literal) {
                 checkLiteral((Literal) astNode);
@@ -292,6 +308,11 @@ public class Checker {
 
     private void checkIfClause(IfClause ifClause) {
         //TODO CH05
+
+        if (assignExpressionType(ifClause.conditionalExpression) != ExpressionType.BOOL) {
+            ifClause.setError("Expressies in if-statements moeten booleans zijn");
+        }
+
         for (ASTNode astNode : ifClause.getChildren()) {
             if (astNode instanceof Literal) {
                 checkLiteral((Literal) astNode);
@@ -316,7 +337,6 @@ public class Checker {
     }
 
     private void checkElseClause(ElseClause elseClause) {
-        //TODO CH05
         for (ASTNode astNode : elseClause.getChildren()) {
             if (astNode instanceof Declaration) {
                 checkDeclaration((Declaration) astNode);
