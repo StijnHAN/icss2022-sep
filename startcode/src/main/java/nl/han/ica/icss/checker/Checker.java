@@ -1,9 +1,9 @@
 package nl.han.ica.icss.checker;
 
 import nl.han.ica.datastructures.HANLinkedList;
+import nl.han.ica.datastructures.HANStack;
 import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.ast.*;
-import nl.han.ica.icss.ast.literals.*;
 import nl.han.ica.icss.ast.operations.AddOperation;
 import nl.han.ica.icss.ast.operations.MultiplyOperation;
 import nl.han.ica.icss.ast.operations.SubtractOperation;
@@ -20,12 +20,17 @@ import static org.apache.commons.lang3.StringUtils.capitalize;
 
 public class Checker {
 
+    private HANLinkedList<String> currentScopeLevel = new HANLinkedList<>();
+
     private IHANLinkedList<HashMap<String, ExpressionType>> variableTypes;
     private HashMap<String, ExpressionType> declaredVariables;
+    private HashMap<String, String> variableScopes;
 
     public void check(AST ast) {
         variableTypes = new HANLinkedList<>();
         declaredVariables = new HashMap<>();
+        variableScopes = new HashMap<>();
+        currentScopeLevel.addFirst("body");
 
         Stylesheet stylesheet = ast.root;
 
@@ -56,13 +61,10 @@ public class Checker {
     }
 
     private void checkStyleRule(Stylerule styleRule) {
+
         for (ASTNode astNode : styleRule.getChildren()) {
-            if (astNode instanceof ClassSelector) {
-                checkClassSelector((ClassSelector) astNode);
-            } else if (astNode instanceof IdSelector) {
-                checkIdSelector((IdSelector) astNode);
-            } else if (astNode instanceof TagSelector) {
-                checkTagSelector((TagSelector) astNode);
+            if (astNode instanceof Selector) {
+                checkSelector((Selector) astNode);
             } else if (astNode instanceof Declaration) {
                 checkDeclaration((Declaration) astNode);
             } else if (astNode instanceof VariableAssignment) {
@@ -71,10 +73,12 @@ public class Checker {
                 checkIfClause((IfClause) astNode);
             }
         }
+
+        currentScopeLevel.removeFirst();
     }
 
     private void checkSelector(Selector selector) {
-        //TODO
+        currentScopeLevel.addFirst(selector.getNodeLabel());
     }
 
     private void checkClassSelector(ClassSelector astNode) {
@@ -90,7 +94,6 @@ public class Checker {
     }
 
     private void checkDeclaration(Declaration declaration) {
-
         ExpressionType valueExpressionType = assignExpressionType(declaration.expression);
         String propertyName = declaration.property.name;
 
@@ -135,6 +138,7 @@ public class Checker {
 
     private void checkVariableAssignment(VariableAssignment variableAssignment) {
         declaredVariables.put(variableAssignment.name.name, assignExpressionType(variableAssignment.expression));
+        variableScopes.put(variableAssignment.name.name, currentScopeLevel.getFirst());
     }
 
     private ExpressionType assignExpressionType(Expression expression) {
@@ -156,8 +160,20 @@ public class Checker {
     private void checkVariableReference(VariableReference variableReference) {
         //TODO CH06
         if (!declaredVariables.containsKey(variableReference.name)) {
-            variableReference.setError("Variabelen moeten gedefinieerd worden: " + variableReference.name);
+            variableReference.setError("Variabele moet gedefinieerd worden: " + variableReference.name);
+        } else if (!checkScopes(variableReference.name)) {
+            variableReference.setError("Variabele is niet gedefinieerd in deze scope");
         }
+    }
+
+    private boolean checkScopes(String name) {
+        for (int i = currentScopeLevel.getSize() - 1; i >= 0; i--) {
+            if (currentScopeLevel.get(i).equals(variableScopes.get(name))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void checkOperation(Operation operation) {
@@ -307,7 +323,7 @@ public class Checker {
     }
 
     private void checkIfClause(IfClause ifClause) {
-        //TODO CH05
+        currentScopeLevel.addFirst(ifClause.toString());
 
         if (assignExpressionType(ifClause.conditionalExpression) != ExpressionType.BOOL) {
             ifClause.setError("Expressies in if-statements moeten booleans zijn");
@@ -334,9 +350,13 @@ public class Checker {
                 checkElseClause((ElseClause) astNode);
             }
         }
+
+        currentScopeLevel.removeFirst();
     }
 
     private void checkElseClause(ElseClause elseClause) {
+        currentScopeLevel.addFirst(elseClause.toString());
+
         for (ASTNode astNode : elseClause.getChildren()) {
             if (astNode instanceof Declaration) {
                 checkDeclaration((Declaration) astNode);
@@ -346,5 +366,7 @@ public class Checker {
                 checkIfClause((IfClause) astNode);
             }
         }
+
+        currentScopeLevel.removeFirst();
     }
 }
