@@ -1,15 +1,11 @@
 package nl.han.ica.icss.checker;
 
 import nl.han.ica.datastructures.HANLinkedList;
-import nl.han.ica.datastructures.HANStack;
 import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.operations.AddOperation;
 import nl.han.ica.icss.ast.operations.MultiplyOperation;
 import nl.han.ica.icss.ast.operations.SubtractOperation;
-import nl.han.ica.icss.ast.selectors.ClassSelector;
-import nl.han.ica.icss.ast.selectors.IdSelector;
-import nl.han.ica.icss.ast.selectors.TagSelector;
 import nl.han.ica.icss.ast.types.ExpressionType;
 
 import java.util.ArrayList;
@@ -20,7 +16,7 @@ import static org.apache.commons.lang3.StringUtils.capitalize;
 
 public class Checker {
 
-    private HANLinkedList<String> currentScopeLevel = new HANLinkedList<>();
+    private HANLinkedList<String> currentValidScopes = new HANLinkedList<>();
 
     private IHANLinkedList<HashMap<String, ExpressionType>> variableTypes;
     private HashMap<String, ExpressionType> declaredVariables;
@@ -30,7 +26,7 @@ public class Checker {
         variableTypes = new HANLinkedList<>();
         declaredVariables = new HashMap<>();
         variableScopes = new HashMap<>();
-        currentScopeLevel.addFirst("body");
+        currentValidScopes.addFirst("body");
 
         Stylesheet stylesheet = ast.root;
 
@@ -74,23 +70,11 @@ public class Checker {
             }
         }
 
-        currentScopeLevel.removeFirst();
+        currentValidScopes.removeFirst();
     }
 
     private void checkSelector(Selector selector) {
-        currentScopeLevel.addFirst(selector.getNodeLabel());
-    }
-
-    private void checkClassSelector(ClassSelector astNode) {
-        //TODO
-    }
-
-    private void checkIdSelector(IdSelector astNode) {
-        //TODO
-    }
-
-    private void checkTagSelector(TagSelector astNode) {
-        //TODO
+        currentValidScopes.addFirst(selector.getNodeLabel());
     }
 
     private void checkDeclaration(Declaration declaration) {
@@ -108,37 +92,17 @@ public class Checker {
         }
 
         for (ASTNode astNode : declaration.getChildren()) {
-            if (astNode instanceof PropertyName) {
-                checkPropertyName((PropertyName) astNode);
-            } else if (astNode instanceof Literal) {
-                checkLiteral((Literal) astNode);
-            } else if (astNode instanceof AddOperation) {
-                checkAddOperation((AddOperation) astNode);
-            } else if (astNode instanceof SubtractOperation) {
-                checkSubtractOperation((SubtractOperation) astNode);
-            } else if (astNode instanceof MultiplyOperation) {
-                checkMultiplyOperation((MultiplyOperation) astNode);
+            if (astNode instanceof Operation) {
+                checkOperation((Operation) astNode);
             } else if (astNode instanceof VariableReference) {
                 checkVariableReference((VariableReference) astNode);
             }
         }
     }
 
-    private void checkExpression(Expression expression) {
-        //TODO
-    }
-
-    private void checkLiteral(Literal literal) {
-        //TODO
-    }
-
-    private void checkPropertyName(PropertyName propertyName) {
-        //TODO
-    }
-
     private void checkVariableAssignment(VariableAssignment variableAssignment) {
         declaredVariables.put(variableAssignment.name.name, assignExpressionType(variableAssignment.expression));
-        variableScopes.put(variableAssignment.name.name, currentScopeLevel.getFirst());
+        variableScopes.put(variableAssignment.name.name, currentValidScopes.getFirst());
     }
 
     private ExpressionType assignExpressionType(Expression expression) {
@@ -158,17 +122,16 @@ public class Checker {
     }
 
     private void checkVariableReference(VariableReference variableReference) {
-        //TODO CH06
         if (!declaredVariables.containsKey(variableReference.name)) {
             variableReference.setError("Variabele moet gedefinieerd worden: " + variableReference.name);
-        } else if (!checkScopes(variableReference.name)) {
+        } else if (!checkIfScopeIsValid(variableReference.name)) {
             variableReference.setError("Variabele is niet gedefinieerd in deze scope");
         }
     }
 
-    private boolean checkScopes(String name) {
-        for (int i = currentScopeLevel.getSize() - 1; i >= 0; i--) {
-            if (currentScopeLevel.get(i).equals(variableScopes.get(name))) {
+    private boolean checkIfScopeIsValid(String name) {
+        for (int i = currentValidScopes.getSize() - 1; i >= 0; i--) {
+            if (currentValidScopes.get(i).equals(variableScopes.get(name))) {
                 return true;
             }
         }
@@ -177,7 +140,76 @@ public class Checker {
     }
 
     private void checkOperation(Operation operation) {
-        //TODO
+        if (operation instanceof AddOperation) {
+            checkAddOperation((AddOperation) operation);
+        }
+
+        if (operation instanceof SubtractOperation) {
+            checkSubtractOperation((SubtractOperation) operation);
+        }
+
+        if (operation instanceof MultiplyOperation) {
+            checkMultiplyOperation((MultiplyOperation) operation);
+        }
+
+        List<ExpressionType> expressionTypeList = getOperationTypes(operation);
+
+        ExpressionType lhs = expressionTypeList.get(0);
+        ExpressionType rhs = expressionTypeList.get(1);
+
+        if (checkForColors(lhs, rhs)) {
+            operation.setError("Kleuren mogen niet gebruikt worden in operaties");
+        }
+
+        if (checkForBools(lhs, rhs)) {
+            operation.setError("Booleans mogen niet gebruikt worden in operaties");
+        }
+
+        for (ASTNode astNode : operation.getChildren()) {
+            if (astNode instanceof VariableReference) {
+                checkVariableReference((VariableReference) astNode);
+            } else if (astNode instanceof Operation) {
+                checkOperation((Operation) astNode);
+            }
+        }
+    }
+
+    private void checkAddOperation(AddOperation addOperation) {
+        List<ExpressionType> expressionTypeList = getOperationTypes(addOperation);
+
+        ExpressionType lhs = expressionTypeList.get(0);
+        ExpressionType rhs = expressionTypeList.get(1);
+
+        if (((lhs != rhs)
+                && (lhs != ExpressionType.SCALAR)
+                && (rhs != ExpressionType.SCALAR))) {
+            addOperation.setError("Min en Plus operanden moeten hetzelfde type hebben");
+        }
+    }
+
+    private void checkSubtractOperation(SubtractOperation subtractOperation) {
+        List<ExpressionType> expressionTypeList = getOperationTypes(subtractOperation);
+
+        ExpressionType lhs = expressionTypeList.get(0);
+        ExpressionType rhs = expressionTypeList.get(1);
+
+        if (((lhs == rhs)
+                && (lhs != ExpressionType.SCALAR)
+                && (rhs != ExpressionType.SCALAR))) {
+            subtractOperation.setError("Min en Plus operanden moeten hetzelfde type hebben");
+        }
+    }
+
+    private void checkMultiplyOperation(MultiplyOperation multiplyOperation) {
+        List<ExpressionType> expressionTypeList = getOperationTypes(multiplyOperation);
+
+        ExpressionType lhs = expressionTypeList.get(0);
+        ExpressionType rhs = expressionTypeList.get(1);
+
+        if ((lhs == ExpressionType.SCALAR && rhs == ExpressionType.SCALAR)
+                || (lhs != ExpressionType.SCALAR && rhs != ExpressionType.SCALAR)) {
+            multiplyOperation.setError("Één van de operanden bij vermenigvuldigen moet scalar zijn");
+        }
     }
 
     private boolean checkForColors(ExpressionType lhs, ExpressionType rhs) {
@@ -215,129 +247,16 @@ public class Checker {
         return ExpressionType.UNDEFINED;
     }
 
-    private void checkAddOperation(AddOperation addOperation) {
-
-        List<ExpressionType> expressionTypeList = getOperationTypes(addOperation);
-
-        ExpressionType lhs = expressionTypeList.get(0);
-        ExpressionType rhs = expressionTypeList.get(1);
-
-        if (((lhs != rhs)
-                && (lhs != ExpressionType.SCALAR)
-                && (rhs != ExpressionType.SCALAR))) {
-            addOperation.setError("Min en Plus operanden moeten hetzelfde type hebben");
-        }
-
-        if (checkForColors(lhs, rhs)) {
-            addOperation.setError("Kleuren mogen niet gebruikt worden in operaties");
-        }
-
-        if (checkForBools(lhs, rhs)) {
-            addOperation.setError("Booleans mogen niet gebruikt worden in operaties");
-        }
-
-        for (ASTNode astNode : addOperation.getChildren()) {
-            if (astNode instanceof Literal) {
-                checkLiteral((Literal) astNode);
-            } else if (astNode instanceof VariableReference) {
-                checkVariableReference((VariableReference) astNode);
-            } else if (astNode instanceof MultiplyOperation) {
-                checkMultiplyOperation((MultiplyOperation) astNode);
-            } else if (astNode instanceof AddOperation) {
-                checkAddOperation((AddOperation) astNode);
-            } else if (astNode instanceof SubtractOperation) {
-                checkSubtractOperation((SubtractOperation) astNode);
-            }
-        }
-    }
-
-    private void checkSubtractOperation(SubtractOperation subtractOperation) {
-
-        List<ExpressionType> expressionTypeList = getOperationTypes(subtractOperation);
-
-        ExpressionType lhs = expressionTypeList.get(0);
-        ExpressionType rhs = expressionTypeList.get(1);
-
-        if (((lhs == rhs)
-                && (lhs != ExpressionType.SCALAR)
-                && (rhs != ExpressionType.SCALAR))) {
-            subtractOperation.setError("Min en Plus operanden moeten hetzelfde type hebben");
-        }
-
-        if (checkForColors(lhs, rhs)) {
-            subtractOperation.setError("Kleuren mogen niet gebruikt worden in operaties");
-        }
-
-        if (checkForBools(lhs, rhs)) {
-            subtractOperation.setError("Booleans mogen niet gebruikt worden in operaties");
-        }
-
-        for (ASTNode astNode : subtractOperation.getChildren()) {
-            if (astNode instanceof Literal) {
-                checkLiteral((Literal) astNode);
-            } else if (astNode instanceof VariableReference) {
-                checkVariableReference((VariableReference) astNode);
-            } else if (astNode instanceof MultiplyOperation) {
-                checkMultiplyOperation((MultiplyOperation) astNode);
-            } else if (astNode instanceof AddOperation) {
-                checkAddOperation((AddOperation) astNode);
-            } else if (astNode instanceof SubtractOperation) {
-                checkSubtractOperation((SubtractOperation) astNode);
-            }
-        }
-    }
-
-    private void checkMultiplyOperation(MultiplyOperation multiplyOperation) {
-
-        List<ExpressionType> expressionTypeList = getOperationTypes(multiplyOperation);
-
-        ExpressionType lhs = expressionTypeList.get(0);
-        ExpressionType rhs = expressionTypeList.get(1);
-
-        if ((lhs == ExpressionType.SCALAR && rhs == ExpressionType.SCALAR)
-                || (lhs != ExpressionType.SCALAR && rhs != ExpressionType.SCALAR)) {
-            multiplyOperation.setError("Één van de operanden bij vermenigvuldigen moet scalar zijn");
-        }
-
-        if (checkForColors(lhs, rhs)) {
-            multiplyOperation.setError("Kleuren mogen niet gebruikt worden in operaties");
-        }
-
-        if (checkForBools(lhs, rhs)) {
-            multiplyOperation.setError("Booleans mogen niet gebruikt worden in operaties");
-        }
-
-        for (ASTNode astNode : multiplyOperation.getChildren()) {
-            if (astNode instanceof Literal) {
-                checkLiteral((Literal) astNode);
-            } else if (astNode instanceof VariableReference) {
-                checkVariableReference((VariableReference) astNode);
-            } else if (astNode instanceof AddOperation) {
-                checkAddOperation((AddOperation) astNode);
-            } else if (astNode instanceof SubtractOperation) {
-                checkSubtractOperation((SubtractOperation) astNode);
-            } else if (astNode instanceof MultiplyOperation) {
-                checkMultiplyOperation((MultiplyOperation) astNode);
-            }
-        }
-    }
-
     private void checkIfClause(IfClause ifClause) {
-        currentScopeLevel.addFirst(ifClause.toString());
+        currentValidScopes.addFirst(ifClause.toString());
 
         if (assignExpressionType(ifClause.conditionalExpression) != ExpressionType.BOOL) {
             ifClause.setError("Expressies in if-statements moeten booleans zijn");
         }
 
         for (ASTNode astNode : ifClause.getChildren()) {
-            if (astNode instanceof Literal) {
-                checkLiteral((Literal) astNode);
-            } else if (astNode instanceof AddOperation) {
-                checkAddOperation((AddOperation) astNode);
-            } else if (astNode instanceof SubtractOperation) {
-                checkSubtractOperation((SubtractOperation) astNode);
-            } else if (astNode instanceof MultiplyOperation) {
-                checkMultiplyOperation((MultiplyOperation) astNode);
+            if (astNode instanceof Operation) {
+                checkOperation((Operation) astNode);
             } else if (astNode instanceof VariableReference) {
                 checkVariableReference((VariableReference) astNode);
             } else if (astNode instanceof Declaration) {
@@ -351,11 +270,11 @@ public class Checker {
             }
         }
 
-        currentScopeLevel.removeFirst();
+        currentValidScopes.removeFirst();
     }
 
     private void checkElseClause(ElseClause elseClause) {
-        currentScopeLevel.addFirst(elseClause.toString());
+        currentValidScopes.addFirst(elseClause.toString());
 
         for (ASTNode astNode : elseClause.getChildren()) {
             if (astNode instanceof Declaration) {
@@ -367,6 +286,6 @@ public class Checker {
             }
         }
 
-        currentScopeLevel.removeFirst();
+        currentValidScopes.removeFirst();
     }
 }
