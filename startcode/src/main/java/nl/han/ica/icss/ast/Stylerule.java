@@ -75,7 +75,7 @@ public class Stylerule extends ASTNode {
     @Override
     public ASTNode replaceChild(ASTNode oldChild, ArrayList<ASTNode> newChild) {
         int index;
-        
+
         if (newChild.get(0) instanceof Selector) {
             index = selectors.indexOf(oldChild);
         } else {
@@ -84,6 +84,7 @@ public class Stylerule extends ASTNode {
 
         removeChild(oldChild);
 
+        // Kan een probleem worden als er selectors en andere ASTnodes in de ArrayList zitten, maar dat is niet mogelijk met de huidige parser
         for (int i = 0; i < newChild.size(); i++) {
             if (newChild.get(i) instanceof Selector) {
                 selectors.add(index + i, (Selector) newChild.get(i));
