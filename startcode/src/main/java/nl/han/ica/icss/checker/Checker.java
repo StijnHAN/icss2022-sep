@@ -101,8 +101,10 @@ public class Checker {
     }
 
     private void checkVariableAssignment(VariableAssignment variableAssignment) {
-        declaredVariables.put(variableAssignment.name.name, assignExpressionType(variableAssignment.expression));
-        variableScopes.put(variableAssignment.name.name, currentValidScopes.getFirst());
+        if (!declaredVariables.containsKey(variableAssignment.name.name)) {
+            declaredVariables.put(variableAssignment.name.name, assignExpressionType(variableAssignment.expression));
+            variableScopes.put(variableAssignment.name.name, currentValidScopes.getFirst());
+        }
     }
 
     private ExpressionType assignExpressionType(Expression expression) {

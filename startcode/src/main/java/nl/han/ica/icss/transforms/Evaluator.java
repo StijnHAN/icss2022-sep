@@ -1,30 +1,90 @@
 package nl.han.ica.icss.transforms;
 
+import nl.han.ica.datastructures.HANLinkedList;
 import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.ast.*;
-import nl.han.ica.icss.ast.literals.PercentageLiteral;
-import nl.han.ica.icss.ast.literals.PixelLiteral;
-import nl.han.ica.icss.ast.literals.ScalarLiteral;
-import nl.han.ica.icss.ast.operations.AddOperation;
-import nl.han.ica.icss.ast.operations.MultiplyOperation;
-import nl.han.ica.icss.ast.operations.SubtractOperation;
+import nl.han.ica.icss.ast.literals.BoolLiteral;
+import nl.han.ica.icss.ast.types.ExpressionType;
 
 import java.util.HashMap;
-import java.util.LinkedList;
 
 public class Evaluator implements Transform {
-
     private IHANLinkedList<HashMap<String, Literal>> variableValues;
 
     public Evaluator() {
-        //variableValues = new HANLinkedList<>();
+        variableValues = new HANLinkedList<>();
     }
 
     @Override
     public void apply(AST ast) {
-        //variableValues = new HANLinkedList<>();
+        variableValues = new HANLinkedList<>();
 
+        applyNode(ast.root);
     }
 
-    
+    private void applyNode(ASTNode astNode) {
+        for (ASTNode checkedNode : astNode.getChildren()) {
+            if (checkedNode instanceof IfClause) {
+                applyIfClause((IfClause) checkedNode, astNode);
+            } else if (checkedNode instanceof Expression) {
+                applyExpression((Expression) checkedNode);
+            }
+            applyNode(checkedNode);
+        }
+    }
+
+//    private void applyVariableAssignment(VariableAssignment checkedNode) {
+//        System.out.println(checkedNode.getNodeLabel());
+//    }
+
+    private void applyExpression(Expression expression) {
+//        System.out.println(expression.getNodeLabel());
+    }
+
+    private void applyIfClause(IfClause ifClause, ASTNode parent) {
+        Expression conditionalExpression = ifClause.conditionalExpression;
+        ElseClause elseClause = ifClause.elseClause;
+
+        if (evaluateConditionalExpression(conditionalExpression)) {
+            parent.removeChild(ifClause); // onzin
+
+            for (ASTNode child : ifClause.body) {
+                parent.addChild(child);
+            }
+        } else {
+            parent.removeChild(ifClause);
+
+            if (elseClause != null) {
+                for (ASTNode child : elseClause.body) {
+                    parent.addChild(child);
+                }
+            }
+        }
+    }
+
+    private boolean evaluateConditionalExpression(Expression conditionalExpression) {
+        if (conditionalExpression instanceof Literal) {
+            return checkLiteral((Literal) conditionalExpression);
+        }
+
+        if (conditionalExpression instanceof VariableReference) {
+            //TODO Doe iets met VariableValues
+        }
+
+        if (conditionalExpression instanceof Operation) {
+            //TODO ??
+        }
+
+        return false;
+    }
+
+    private boolean checkLiteral(Literal conditionalExpression) {
+        Literal trueComparator = new BoolLiteral(true);
+
+        return conditionalExpression.equals(trueComparator);
+    }
+
+//    private void applyElseClause() {
+//        System.out.println("ElseClause");
+//    }
 }
