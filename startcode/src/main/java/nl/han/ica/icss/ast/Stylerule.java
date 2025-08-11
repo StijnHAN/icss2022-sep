@@ -35,9 +35,9 @@ public class Stylerule extends ASTNode {
     @Override
     public ASTNode addChild(ASTNode child) {
         if (child instanceof Selector)
-            selectors.add(0, (Selector) child);
+            selectors.add((Selector) child);
         else
-            body.add(0, child);
+            body.add(child);
 
         return this;
     }
@@ -48,6 +48,48 @@ public class Stylerule extends ASTNode {
             selectors.remove(child);
         } else {
             body.remove(child);
+        }
+
+        return this;
+    }
+
+    @Override
+    public ASTNode replaceChild(ASTNode oldChild, ASTNode newChild) {
+        int index;
+
+        if (newChild instanceof Selector) {
+            index = selectors.indexOf(oldChild);
+
+            removeChild(oldChild);
+            selectors.add(index, (Selector) newChild);
+        } else {
+            index = body.indexOf(oldChild);
+
+            removeChild(oldChild);
+            body.add(index, newChild);
+        }
+
+        return this;
+    }
+
+    @Override
+    public ASTNode replaceChild(ASTNode oldChild, ArrayList<ASTNode> newChild) {
+        int index;
+        
+        if (newChild.get(0) instanceof Selector) {
+            index = selectors.indexOf(oldChild);
+        } else {
+            index = body.indexOf(oldChild);
+        }
+
+        removeChild(oldChild);
+
+        for (int i = 0; i < newChild.size(); i++) {
+            if (newChild.get(i) instanceof Selector) {
+                selectors.add(index + i, (Selector) newChild.get(i));
+            } else {
+                body.add(index + i, newChild.get(i));
+            }
         }
 
         return this;

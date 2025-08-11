@@ -4,7 +4,6 @@ import nl.han.ica.datastructures.HANLinkedList;
 import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.ast.*;
 import nl.han.ica.icss.ast.literals.BoolLiteral;
-import nl.han.ica.icss.ast.types.ExpressionType;
 
 import java.util.HashMap;
 
@@ -38,7 +37,7 @@ public class Evaluator implements Transform {
 //    }
 
     private void applyExpression(Expression expression) {
-//        System.out.println(expression.getNodeLabel());
+        System.out.println(expression.getNodeLabel());
     }
 
     private void applyIfClause(IfClause ifClause, ASTNode parent) {
@@ -46,19 +45,11 @@ public class Evaluator implements Transform {
         ElseClause elseClause = ifClause.elseClause;
 
         if (evaluateConditionalExpression(conditionalExpression)) {
-            parent.removeChild(ifClause); // onzin
-
-            for (ASTNode child : ifClause.body) {
-                parent.addChild(child);
-            }
+            parent.replaceChild(ifClause, ifClause.body);
+        } else if (elseClause != null) {
+            parent.replaceChild(ifClause, elseClause.body);
         } else {
             parent.removeChild(ifClause);
-
-            if (elseClause != null) {
-                for (ASTNode child : elseClause.body) {
-                    parent.addChild(child);
-                }
-            }
         }
     }
 

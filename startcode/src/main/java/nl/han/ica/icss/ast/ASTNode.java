@@ -38,6 +38,10 @@ public class ASTNode {
         return this;
     }
 
+    public ASTNode replaceChild(ASTNode oldChild, ASTNode newChild) {return this;}
+
+    public ASTNode replaceChild(ASTNode oldChild, ArrayList<ASTNode> newChild) {return this;}
+
     public SemanticError getError() {
         return this.error;
     }
@@ -58,11 +62,11 @@ public class ASTNode {
 	}
 	private void toString(StringBuilder builder) {
 		builder.append("[");
-		builder.append(getNodeLabel());	
+		builder.append(getNodeLabel());
 		builder.append("|");
 		for(ASTNode child : getChildren()) {
 			child.toString(builder);
-		}	
+		}
 		builder.append("]");
 	}
 
