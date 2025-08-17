@@ -18,23 +18,64 @@ public class Evaluator implements Transform {
     public void apply(AST ast) {
         variableValues = new HANLinkedList<>();
 
-        applyNode(ast.root);
+        applyStylesheet(ast.root);
     }
 
-    private void applyNode(ASTNode astNode) {
-        for (ASTNode checkedNode : astNode.getChildren()) {
-            if (checkedNode instanceof IfClause) {
-                applyIfClause((IfClause) checkedNode, astNode);
-            } else if (checkedNode instanceof Expression) {
-                applyExpression((Expression) checkedNode);
+    private void applyStylesheet(Stylesheet stylesheet) {
+        for (ASTNode astNode : stylesheet.getChildren()) {
+            if (astNode instanceof Stylerule) {
+                applyStyleRule((Stylerule) astNode);
+            } else if (astNode instanceof VariableAssignment) {
+                applyVariableAssignment((VariableAssignment) astNode);
             }
-            applyNode(checkedNode);
         }
     }
 
-//    private void applyVariableAssignment(VariableAssignment checkedNode) {
-//        System.out.println(checkedNode.getNodeLabel());
-//    }
+    private void applyStyleRule(Stylerule stylerule) {
+        for (ASTNode astNode : stylerule.getChildren()) {
+            if (astNode instanceof Selector) {
+                applySelector((Selector) astNode);
+            } else if (astNode instanceof Declaration) {
+                applyDeclaration((Declaration) astNode);
+            } else if (astNode instanceof VariableAssignment) {
+                applyVariableAssignment((VariableAssignment) astNode);
+            } else if (astNode instanceof IfClause) {
+                applyIfClause((IfClause) astNode, stylerule);
+            }
+        }
+    }
+
+    private void applySelector(Selector selector) {
+        //TODO Empty
+    }
+
+    private void applyDeclaration(Declaration declaration) {
+        for (ASTNode astNode : declaration.getChildren()) {
+            if (astNode instanceof Operation) {
+                applyOperation((Operation) astNode);
+            } else if (astNode instanceof VariableReference) {
+                applyVariableReference((VariableReference) astNode);
+            }
+        }
+    }
+
+    private void applyOperation(Operation operation) {
+        for (ASTNode astNode : operation.getChildren()) {
+            if (astNode instanceof VariableReference) {
+                applyVariableReference((VariableReference) astNode);
+            } else if (astNode instanceof Operation) {
+                applyOperation((Operation) astNode);
+            }
+        }
+    }
+
+    private void applyVariableReference(VariableReference variableReference) {
+        //TODO Empty
+    }
+
+    private void applyVariableAssignment(VariableAssignment variableAssignment) {
+        //TODO Empty
+    }
 
     private void applyExpression(Expression expression) {
         System.out.println(expression.getNodeLabel());
@@ -51,6 +92,34 @@ public class Evaluator implements Transform {
         } else {
             parent.removeChild(ifClause);
         }
+
+        for (ASTNode astNode : ifClause.getChildren()) {
+            if (astNode instanceof Operation) {
+                applyOperation((Operation) astNode);
+            } else if (astNode instanceof VariableReference) {
+                applyVariableReference((VariableReference) astNode);
+            } else if (astNode instanceof Declaration) {
+                applyDeclaration((Declaration) astNode);
+            } else if (astNode instanceof VariableAssignment) {
+                applyVariableAssignment((VariableAssignment) astNode);
+            } else if (astNode instanceof IfClause) {
+                applyIfClause((IfClause) astNode, ifClause);
+            } else if (astNode instanceof ElseClause) {
+                applyElseClause((ElseClause) astNode);
+            }
+        }
+    }
+
+    private void applyElseClause(ElseClause elseClause) {
+        for (ASTNode astNode : elseClause.getChildren()) {
+            if (astNode instanceof Declaration) {
+                applyDeclaration((Declaration) astNode);
+            } else if (astNode instanceof VariableAssignment) {
+                applyVariableAssignment((VariableAssignment) astNode);
+            } else if (astNode instanceof IfClause) {
+                applyIfClause((IfClause) astNode, elseClause);
+            }
+        }
     }
 
     private boolean evaluateConditionalExpression(Expression conditionalExpression) {
@@ -62,10 +131,6 @@ public class Evaluator implements Transform {
             //TODO Doe iets met VariableValues
         }
 
-        if (conditionalExpression instanceof Operation) {
-            //TODO ??
-        }
-
         return false;
     }
 
@@ -74,8 +139,4 @@ public class Evaluator implements Transform {
 
         return conditionalExpression.equals(trueComparator);
     }
-
-//    private void applyElseClause() {
-//        System.out.println("ElseClause");
-//    }
 }
