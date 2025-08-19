@@ -70,11 +70,36 @@ public class Evaluator implements Transform {
     }
 
     private void applyVariableReference(VariableReference variableReference) {
-        //TODO Empty
+        //TODO
     }
 
     private void applyVariableAssignment(VariableAssignment variableAssignment) {
-        //TODO Empty
+        //TODO
+        applyExpression(variableAssignment.expression);
+
+        updateVariableValues(variableAssignment);
+    }
+
+    private void updateVariableValues(VariableAssignment variableAssignment) {
+        HashMap<String, Literal> temp;
+        temp = new HashMap<>();
+
+        temp.put(variableAssignment.name.name, (Literal) variableAssignment.expression);
+
+        if (!updateExistingVariables(variableAssignment.name.name, (Literal) variableAssignment.expression)) {
+            variableValues.addFirst(temp);
+        }
+    }
+
+    private boolean updateExistingVariables(String key, Literal value) {
+        for (int i = 0; i < variableValues.getSize(); i++) {
+            if (variableValues.get(i).containsKey(key)) {
+                variableValues.get(i).put(key, value);
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void applyExpression(Expression expression) {
@@ -87,26 +112,20 @@ public class Evaluator implements Transform {
 
         if (evaluateConditionalExpression(conditionalExpression)) {
             parent.replaceChild(ifClause, ifClause.body);
+            for (ASTNode astNode : ifClause.body) {
+                if (astNode instanceof Declaration) {
+                    applyDeclaration((Declaration) astNode);
+                } else if (astNode instanceof VariableAssignment) {
+                    applyVariableAssignment((VariableAssignment) astNode);
+                } else if (astNode instanceof IfClause) {
+                    applyIfClause((IfClause) astNode, ifClause);
+                }
+            }
         } else if (elseClause != null) {
             parent.replaceChild(ifClause, elseClause.body);
+            applyElseClause(elseClause);
         } else {
             parent.removeChild(ifClause);
-        }
-
-        for (ASTNode astNode : ifClause.getChildren()) {
-            if (astNode instanceof Operation) {
-                applyOperation((Operation) astNode);
-            } else if (astNode instanceof VariableReference) {
-                applyVariableReference((VariableReference) astNode);
-            } else if (astNode instanceof Declaration) {
-                applyDeclaration((Declaration) astNode);
-            } else if (astNode instanceof VariableAssignment) {
-                applyVariableAssignment((VariableAssignment) astNode);
-            } else if (astNode instanceof IfClause) {
-                applyIfClause((IfClause) astNode, ifClause);
-            } else if (astNode instanceof ElseClause) {
-                applyElseClause((ElseClause) astNode);
-            }
         }
     }
 
