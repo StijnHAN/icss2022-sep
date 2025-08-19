@@ -147,7 +147,13 @@ public class Evaluator implements Transform {
         }
 
         if (conditionalExpression instanceof VariableReference) {
-            //TODO Doe iets met VariableValues
+            for (int i = 0; i < variableValues.getSize(); i++) {
+                if (variableValues.get(i).containsKey(((VariableReference) conditionalExpression).name)) {
+                    if (((BoolLiteral) variableValues.get(i).get(((VariableReference) conditionalExpression).name)).value) {
+                        return true;
+                    }
+                }
+            }
         }
 
         return false;
