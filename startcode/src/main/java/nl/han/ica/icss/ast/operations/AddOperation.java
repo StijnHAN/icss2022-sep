@@ -8,4 +8,9 @@ public class AddOperation extends Operation {
     public String getNodeLabel() {
         return "Add";
     }
+
+    @Override
+    public int calculate() {
+        return lhs.getNumericalValue() + rhs.getNumericalValue();
+    }
 }

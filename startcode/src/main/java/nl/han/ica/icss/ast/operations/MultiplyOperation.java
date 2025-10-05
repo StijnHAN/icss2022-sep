@@ -8,4 +8,9 @@ public class MultiplyOperation extends Operation {
     public String getNodeLabel() {
         return "Multiply";
     }
+
+    @Override
+    public int calculate() {
+        return lhs.getNumericalValue() * rhs.getNumericalValue();
+    }
 }

@@ -8,4 +8,9 @@ public class SubtractOperation extends Operation {
     public String getNodeLabel() {
         return "Subtract";
     }
+
+    @Override
+    public int calculate() {
+        return lhs.getNumericalValue() - rhs.getNumericalValue();
+    }
 }

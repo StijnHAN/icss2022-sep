@@ -3,7 +3,8 @@ package nl.han.ica.icss.transforms;
 import nl.han.ica.datastructures.HANLinkedList;
 import nl.han.ica.datastructures.IHANLinkedList;
 import nl.han.ica.icss.ast.*;
-import nl.han.ica.icss.ast.literals.BoolLiteral;
+import nl.han.ica.icss.ast.literals.*;
+import nl.han.ica.icss.ast.types.ExpressionType;
 
 import java.util.HashMap;
 
@@ -52,32 +53,58 @@ public class Evaluator implements Transform {
     private void applyDeclaration(Declaration declaration) {
         for (ASTNode astNode : declaration.getChildren()) {
             if (astNode instanceof Operation) {
-                applyOperation((Operation) astNode);
+                applyOperation((Operation) astNode, declaration);
             } else if (astNode instanceof VariableReference) {
-                applyVariableReference((VariableReference) astNode);
+                applyVariableReference((VariableReference) astNode, declaration);
             }
         }
     }
 
-    private void applyOperation(Operation operation) {
+    private void applyOperation(Operation operation, ASTNode parent) {
         for (ASTNode astNode : operation.getChildren()) {
             if (astNode instanceof VariableReference) {
-                applyVariableReference((VariableReference) astNode);
+                applyVariableReference((VariableReference) astNode, operation);
             } else if (astNode instanceof Operation) {
-                applyOperation((Operation) astNode);
+                applyOperation((Operation) astNode, operation);
             }
         }
+
+        ExpressionType operationExpressionType = assignOperationExpressionType(operation.lhs, operation.rhs);
+
+        Literal newLiteral;
+
+        if (operationExpressionType == ExpressionType.PIXEL) {
+            newLiteral = new PixelLiteral(operation.calculate());
+        } else if (operationExpressionType == ExpressionType.PERCENTAGE) {
+            newLiteral = new PercentageLiteral(operation.calculate());
+        } else {
+            newLiteral = new ScalarLiteral(operation.calculate());
+        }
+
+        parent.replaceChild(operation, newLiteral);
     }
 
-    private void applyVariableReference(VariableReference variableReference) {
-        //TODO
+    private ExpressionType assignOperationExpressionType(Expression lhs, Expression rhs) {
+        if (lhs instanceof PercentageLiteral || rhs instanceof PercentageLiteral) {
+            return ExpressionType.PERCENTAGE;
+        } else if (lhs instanceof PixelLiteral || rhs instanceof PixelLiteral) {
+            return ExpressionType.PIXEL;
+        }
+
+        return ExpressionType.SCALAR;
+    }
+
+    private void applyVariableReference(VariableReference variableReference, ASTNode parent) {
+        for (int i = 0; i < variableValues.getSize(); i++) {
+            if (variableValues.get(i).containsKey(variableReference.name)) {
+                parent.replaceChild(variableReference, variableValues.get(i).get(variableReference.name));
+            }
+        }
     }
 
     private void applyVariableAssignment(VariableAssignment variableAssignment) {
-        //TODO
-        applyExpression(variableAssignment.expression);
-
         updateVariableValues(variableAssignment);
+        applyExpression(variableAssignment.expression, variableAssignment);
     }
 
     private void updateVariableValues(VariableAssignment variableAssignment) {
@@ -102,8 +129,12 @@ public class Evaluator implements Transform {
         return false;
     }
 
-    private void applyExpression(Expression expression) {
-        System.out.println(expression.getNodeLabel());
+    private void applyExpression(Expression expression, ASTNode parent) {
+        if (expression instanceof Operation) {
+            applyOperation((Operation) expression, parent);
+        } else if (expression instanceof VariableReference) {
+            applyVariableReference((VariableReference) expression, parent);
+        }
     }
 
     private void applyIfClause(IfClause ifClause, ASTNode parent) {

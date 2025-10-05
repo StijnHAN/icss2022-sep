@@ -10,9 +10,16 @@ public class PercentageLiteral extends Literal {
     public PercentageLiteral(int value) {
         this.value = value;
     }
+
     public PercentageLiteral(String text) {
         this.value = Integer.parseInt(text.substring(0, text.length() - 1));
     }
+
+    @Override
+    public int getNumericalValue() {
+        return value;
+    }
+
     @Override
     public String getNodeLabel() {
         return "Percentage literal (" + value + ")";
