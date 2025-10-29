@@ -195,9 +195,7 @@ public class Checker {
         ExpressionType lhs = expressionTypeList.get(0);
         ExpressionType rhs = expressionTypeList.get(1);
 
-        if (((lhs == rhs)
-                && (lhs != ExpressionType.SCALAR)
-                && (rhs != ExpressionType.SCALAR))) {
+        if (lhs == rhs && lhs != ExpressionType.SCALAR) {
             subtractOperation.setError("Min en Plus operanden moeten hetzelfde type hebben");
         }
     }

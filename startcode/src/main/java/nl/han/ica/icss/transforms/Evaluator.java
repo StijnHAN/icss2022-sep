@@ -34,9 +34,7 @@ public class Evaluator implements Transform {
 
     private void applyStyleRule(Stylerule stylerule) {
         for (ASTNode astNode : stylerule.getChildren()) {
-            if (astNode instanceof Selector) {
-                applySelector((Selector) astNode);
-            } else if (astNode instanceof Declaration) {
+            if (astNode instanceof Declaration) {
                 applyDeclaration((Declaration) astNode);
             } else if (astNode instanceof VariableAssignment) {
                 applyVariableAssignment((VariableAssignment) astNode);
@@ -44,10 +42,6 @@ public class Evaluator implements Transform {
                 applyIfClause((IfClause) astNode, stylerule);
             }
         }
-    }
-
-    private void applySelector(Selector selector) {
-        //TODO Empty
     }
 
     private void applyDeclaration(Declaration declaration) {

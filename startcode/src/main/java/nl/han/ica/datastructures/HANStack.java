@@ -1,8 +1,5 @@
 package nl.han.ica.datastructures;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-
 public class HANStack<T> implements IHANStack<T> {
     public HANLinkedList<T> stack;
 
