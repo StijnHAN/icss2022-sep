@@ -149,7 +149,7 @@ public class Evaluator implements Transform {
                 } else if (astNode instanceof VariableAssignment) {
                     applyVariableAssignment((VariableAssignment) astNode);
                 } else if (astNode instanceof IfClause) {
-                    applyIfClause((IfClause) astNode, ifClause);
+                    applyIfClause((IfClause) astNode, parent);
                 }
             }
         } else if (elseClause != null) {
