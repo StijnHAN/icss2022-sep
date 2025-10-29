@@ -7,7 +7,7 @@ public abstract class Operation extends Expression {
     public Expression lhs;
     public Expression rhs;
 
-    public int calculate(){
+    public int calculate() {
         return 0;
     }
 

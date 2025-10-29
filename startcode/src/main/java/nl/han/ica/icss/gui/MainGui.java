@@ -30,7 +30,7 @@ public class MainGui extends Application {
 
     private final static String title = "ICSS Tool September 2020, version 1";
     //Example files (for menu)
-    private final static List<String> examples = Arrays.asList("level0.icss","level1.icss","level2.icss","level3.icss");
+    private final static List<String> examples = Arrays.asList("level0.icss", "level1.icss", "level2.icss", "level3.icss");
 
     //UI Components
     private InputPane inputPane;
@@ -115,7 +115,7 @@ public class MainGui extends Application {
         Menu exampleFilesMenu = new Menu("Load example ICSS");
 
         //We load them as resources straight from the application's jar
-        for(String level: examples) {
+        for (String level : examples) {
 
             MenuItem levelItem = new MenuItem(level);
             levelItem.setOnAction(new EventHandler<ActionEvent>() {
@@ -195,7 +195,7 @@ public class MainGui extends Application {
         clear();
         feedbackPane.addLine("Parsing...");
         pipeline.parseString(inputPane.getText());
-        for(String e : pipeline.getErrors()) {
+        for (String e : pipeline.getErrors()) {
             feedbackPane.addLine(e);
         }
         if (pipeline.isParsed()) {
@@ -220,14 +220,14 @@ public class MainGui extends Application {
     }
 
     private void transform() {
-       clear();
-       feedbackPane.addLine("Applying transformations...");
-       pipeline.transform();
-       if (pipeline.isTransformed()) {
-           feedbackPane.addLine("Transformation succeeded");
-       }
-       astPane.update(pipeline.getAST());
-       updateToolbar();
+        clear();
+        feedbackPane.addLine("Applying transformations...");
+        pipeline.transform();
+        if (pipeline.isTransformed()) {
+            feedbackPane.addLine("Transformation succeeded");
+        }
+        astPane.update(pipeline.getAST());
+        updateToolbar();
     }
 
     private void generate() {
